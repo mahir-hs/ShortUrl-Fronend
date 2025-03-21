@@ -14,8 +14,8 @@ export class UrlShortenerService {
       return this.http.post<any>(this.baseUrl+'create', requestData); 
   }
 
-  getOriginalUrl(shortUrl: string): Observable<string> {
-    return this.http.get<any>(this.baseUrl+'shortCode?shortUrl='+shortUrl);
+  getOriginalUrl(shortUrl: string): Observable<any> {
+    return this.http.get<any>(this.baseUrl+'shortCode?shortCode='+shortUrl);
   }
 }
 interface ShortenUrlRequest {
