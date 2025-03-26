@@ -14,7 +14,7 @@ pipeline {
         stage('Build') {
             steps {
                 bat '''
-                npm run build -- --configuration=production
+                npx ng build --configuration=production
                 '''
             }
         }
