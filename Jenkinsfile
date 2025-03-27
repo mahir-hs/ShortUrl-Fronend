@@ -2,24 +2,36 @@ pipeline {
     agent any
 
     environment {
-        // Customize Node.js cache directory
         npm_config_cache = "${WORKSPACE}/.npm"
+        NODE_OPTIONS = "--max_old_space_size=4096"
     }
 
     stages {
-        stage('Clean Workspace') {
+        stage('Checkout') {
             steps {
-                cleanWs()
+                git branch: 'Beta_Branch', url: 'https://github.com/mahir-hs/ShortUrl-Frontend.git'
             }
         }
 
-        stage('Check Versions') {
+        stage('Verify Workspace') {
             steps {
                 bat '''
-                echo "Node.js version:"
-                node --version
-                echo "npm version:"
-                npm --version
+                echo "Workspace contents:"
+                dir
+                echo "Checking for angular.json..."
+                if not exist angular.json (
+                    echo "ERROR: angular.json not found!"
+                    exit 1
+                )
+                '''
+            }
+        }
+
+        stage('Install Tools') {
+            steps {
+                bat '''
+                echo "Installing Angular CLI..."
+                npm install -g @angular/cli@18.2.11
                 '''
             }
         }
@@ -27,37 +39,27 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 bat '''
-                npm install -g @angular/cli@18.2.11
+                echo "Installing dependencies..."
                 npm install
-                npm install @angular-devkit/build-angular
-                npm install @angular/ssr
+                npm install @angular-devkit/build-angular --save-dev
                 '''
             }
         }
 
-        stage('Build Production') {
+        stage('Build Project') {
             steps {
                 bat '''
-                npx ng build --configuration=production
+                echo "Building Angular application..."
+                npx ng build --configuration production
                 '''
             }
         }
 
-        stage('Build SSR') {
+        stage('Verify Build Output') {
             steps {
                 bat '''
-                npx ng run frontend:server:production
-                '''
-            }
-        }
-
-        stage('Verify Output') {
-            steps {
-                bat '''
-                echo "Browser files:"
-                dir /s dist\\frontend\\browser
-                echo "Server files:"
-                dir /s dist\\frontend\\server
+                echo "Build output contents:"
+                dir dist\\frontend
                 '''
             }
         }
@@ -69,18 +71,4 @@ pipeline {
         }
     }
 
-    post {
-        always {
-            // Clean up workspace after build
-            cleanWs()
-        }
-        success {
-            // Optional: Notify success (Slack, Email, etc.)
-            echo 'Build succeeded!'
-        }
-        failure {
-            // Optional: Notify failure
-            echo 'Build failed!'
-        }
-    }
 }
